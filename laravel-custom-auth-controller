@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Http\Controllers\HtmlFileScraping;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+
+use App\models\HtmlFileScraping\PdfScrapeAdminModel;
+
+use Hash;
+
+class AuthScraperController extends Controller
+{
+    //
+
+     public function __construct()
+    {
+      $this->middleware('guest:scrapePdfAdmin', ['except' => ['logout']]);
+    }
+    
+    public function showLoginForm()
+    {
+     	return view('HtmlFileScraping.auth');
+    }
+    
+    public function login(Request $request)
+    {
+
+
+    	/*echo Hash::make(123456);
+    	echo "<pre>";
+    	die();*/
+
+    	 //var_dump(Hash::check('123456','$2y$12$LzjNe4.4viOGiEP9WEX4ju8JCluUY1L0PRrfwSYteAVZ5gE9MKVVe', []));
+
+    	 	
+
+
+      // Validate the form data
+      /*$this->validate($request, [
+        'username'   => 'required|email',
+        'password' => 'required|min:6'
+      ]);*/
+
+      // Attempt to log the user in
+      if (Auth::guard('scrapePdfAdmin')->attempt(['email' => $request->email, 'password' => $request->password], $request->remember)) {
+
+      	
+        // if successful, then redirect to their intended location
+        return redirect()->intended('scrape/form');
+      } 
+
+      $request->session()->flash('status', 'Invalid username or password!');
+      // if unsuccessful, then redirect back to the login with the form data
+      return redirect()->back()->withInput($request->only('email', 'remember'));
+    }
+
+
+
+  
+
+    
+    public function logout()
+    {
+        Auth::guard('scrapePdfAdmin')->logout();
+        return redirect('/scrape/home');
+    }
+}
