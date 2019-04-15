@@ -1,0 +1,109 @@
+<?php
+public function allPdfUsers(Request $request)
+	    {
+	        
+	        $columns = array( 
+	                            0 =>'id', 
+	                            1 =>'main_url',
+	                            2=> 'alternate_url',
+	                            3=> 'created_at',
+	                            4=> 'id',
+	                        );
+	  
+	        $totalData = DB::table('PDF_inputed_data')->count();
+	            
+	        $totalFiltered = $totalData; 
+
+	        $limit = $request->input('length');
+	        $start = $request->input('start');
+	        $order = $columns[$request->input('order.0.column')];
+	        $dir = $request->input('order.0.dir');
+	            
+	        if(empty($request->input('search.value')))
+	        {            
+	            $posts = DB::table('PDF_inputed_data')
+				                ->offset($start)
+				                ->limit($limit)
+				                ->orderBy($order,$dir)
+				                ->get();
+
+	            
+	        }
+	        else {
+	            $search = $request->input('search.value'); 
+
+	            $posts =  DB::table('PDF_inputed_data')
+	            				->where('id','LIKE',"%{$search}%")
+	                            ->orWhere('main_url', 'LIKE',"%{$search}%")
+	                            ->offset($start)
+	                            ->limit($limit)
+	                            ->orderBy($order,$dir)
+	                            ->get();
+
+	            $totalFiltered = DB::table('PDF_inputed_data')
+	            				 ->where('id','LIKE',"%{$search}%")
+	                             ->orWhere('main_url', 'LIKE',"%{$search}%")
+	                             ->count();
+	        }
+
+	        $data = array();
+	        if(!empty($posts))
+	        {
+	            foreach ($posts as $post)
+	            {
+	                $show =  'gg';//route('posts.show',$post->id);
+	                $edit =  'hh';//route('posts.edit',$post->id);
+
+	                $nestedData['id'] = $post->id;
+	                $nestedData['main_url'] = $post->main_url;
+	                $nestedData['alternate_url'] = $post->alternate_url;
+	                $nestedData['created_at'] = date('j M Y h:i a',strtotime($post->created_at));
+	                $nestedData['options'] = "&emsp;<a href='{$show}' title='SHOW' ><span class='glyphicon glyphicon-list'></span></a>
+	                                          &emsp;<a href='{$edit}' title='EDIT' ><span class='glyphicon glyphicon-edit'></span></a>";
+	                $data[] = $nestedData;
+
+	            }
+	        }
+	          
+	        $json_data = array(
+	                    "draw"            => intval($request->input('draw')),  
+	                    "recordsTotal"    => intval($totalData),  
+	                    "recordsFiltered" => intval($totalFiltered), 
+	                    "data"            => $data   
+	                    );
+	            
+	        echo json_encode($json_data); 
+	        
+	    }
+
+
+?>
+
+
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.12/datatables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/3.2.6/js/dataTables.fixedColumns.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            $('#pdf_user').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax":{
+                         "url": "{{ url('scrape/all-pdf-users-ajax') }}",
+                         "dataType": "json",
+                         "type": "POST",
+                         "data":{ _token: "{{csrf_token()}}"}
+                       },
+                "columns": [
+                    { "data": "id" },
+                    { "data": "main_url" },
+                    { "data": "alternate_url" },
+                    { "data": "created_at" },
+                    { "data": "options" }
+                ],
+                    
+
+            });
+        });
+    </script>
